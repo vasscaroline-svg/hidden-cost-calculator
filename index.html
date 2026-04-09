@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hidden Cost of Being a Woman</title>
+<style>
+  :root {
+    --pink:#D4537E;--pink-light:#FBEAF0;--purple:#534AB7;--purple-light:#EEEDFE;
+    --teal:#1D9E75;--teal-light:#E1F5EE;--amber:#BA7517;--amber-light:#FAEEDA;
+    --coral:#D85A30;--coral-light:#FAECE7;--gray:#5F5E5A;--gray-light:#F1EFE8;
+    --text:#2C2C2A;--text-muted:#5F5E5A;--border:rgba(0,0,0,0.12);--bg:#fff;--surface:#F8F7F4;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --text:#F1EFE8;--text-muted:#B4B2A9;--border:rgba(255,255,255,0.12);--bg:#1a1a18;--surface:#242420;
+    --pink-light:#3a1a28;--purple-light:#1e1c3a;--teal-light:#0a2820;--amber-light:#2a1e06;--coral-light:#2a1208;--gray-light:#242420;
+  }}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:16px;line-height:1.6;}
+  .hero{padding:3rem 2rem 2rem;text-align:center;border-bottom:0.5px solid var(--border);}
+  .hero h1{font-size:2rem;font-weight:500;margin-bottom:0.5rem;}
+  .hero p{color:var(--text-muted);max-width:560px;margin:0 auto;font-size:0.95rem;}
+  .sticky-total{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:0.5px solid var(--border);padding:0.75rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+  .sticky-total .label{font-size:0.82rem;color:var(--text-muted);}
+  .sticky-total .amount{font-size:1.5rem;font-weight:500;color:var(--pink);}
+  .sticky-total .note{font-size:0.72rem;color:var(--text-muted);text-align:right;max-width:220px;}
+  .tab-bar{display:flex;border-bottom:0.5px solid var(--border);background:var(--surface);}
+  .tab-btn{flex:1;padding:0.75rem 1rem;font-size:0.85rem;font-weight:500;color:var(--text-muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;}
+  .tab-btn.active{color:var(--pink);border-bottom-color:var(--pink);background:var(--bg);}
+  .settings{padding:1.25rem 2rem;background:var(--surface);border-bottom:0.5px solid var(--border);display:flex;flex-wrap:wrap;gap:1.25rem;align-items:flex-end;}
+  .settings label{font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:3px;}
+  .settings select,.settings input[type=number]{background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:0.88rem;color:var(--text);}
+  .setting-group{display:flex;flex-direction:column;}
+  .tab-panel{display:none;} .tab-panel.active{display:block;}
+
+  /* labour calculator */
+  .labour-calc{background:var(--purple-light);border:0.5px solid rgba(83,74,183,0.25);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;}
+  .labour-calc h3{font-size:0.95rem;font-weight:500;color:var(--purple);margin-bottom:0.25rem;}
+  .labour-calc p{font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;}
+  .labour-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:1rem;}
+  .labour-input-group label{font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:3px;}
+  .labour-input-group input{width:100%;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:0.88rem;color:var(--text);}
+  .labour-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
+  .labour-card{background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;}
+  .labour-card .lc-label{font-size:0.72rem;color:var(--text-muted);}
+  .labour-card .lc-value{font-size:1.1rem;font-weight:500;color:var(--purple);margin-top:2px;}
+  .labour-card .lc-note{font-size:0.68rem;color:var(--text-muted);margin-top:1px;}
+  .labour-include{display:flex;align-items:center;gap:6px;margin-top:0.75rem;font-size:0.78rem;color:var(--text-muted);}
+  .labour-include input{accent-color:var(--purple);}
+
+  /* sections */
+  .sections{max-width:860px;margin:0 auto;padding:2rem;display:flex;flex-direction:column;gap:1.5rem;}
+  .section{border:0.5px solid var(--border);border-radius:12px;overflow:hidden;}
+  .section-header{padding:0.9rem 1.25rem;display:flex;align-items:center;gap:0.75rem;cursor:pointer;user-select:none;}
+  .section-header .icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+  .section-header h2{font-size:0.92rem;font-weight:500;flex:1;}
+  .section-header .section-cost{font-size:0.92rem;font-weight:500;}
+  .section-header .chevron{font-size:10px;color:var(--text-muted);transition:transform 0.2s;margin-left:6px;}
+  .section-header.open .chevron{transform:rotate(180deg);}
+  .section-body{padding:0 1.25rem 1.25rem;display:none;border-top:0.5px solid var(--border);padding-top:0.9rem;}
+  .section-body.open{display:block;}
+  .cost-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:0.55rem 0;border-bottom:0.5px solid var(--border);}
+  .cost-row:last-child{border-bottom:none;}
+  .row-name{font-size:0.85rem;font-weight:500;}
+  .row-desc{font-size:0.75rem;color:var(--text-muted);margin-top:2px;line-height:1.4;}
+  .row-right{text-align:right;flex-shrink:0;}
+  .row-amount{font-size:0.88rem;font-weight:500;}
+  .row-toggle{display:flex;align-items:center;gap:5px;margin-top:3px;justify-content:flex-end;}
+  .row-toggle input{cursor:pointer;accent-color:var(--pink);}
+  .toggle-label{font-size:0.7rem;color:var(--text-muted);}
+  .invisible-note{font-size:0.72rem;color:var(--text-muted);font-style:italic;margin-top:3px;padding:3px 7px;border-left:2px solid var(--border);}
+  .section.pink .section-header{background:var(--pink-light);} .section.pink .section-cost{color:var(--pink);} .section.pink .icon{background:var(--pink);color:#fff;}
+  .section.purple .section-header{background:var(--purple-light);} .section.purple .section-cost{color:var(--purple);} .section.purple .icon{background:var(--purple);color:#fff;}
+  .section.teal .section-header{background:var(--teal-light);} .section.teal .section-cost{color:var(--teal);} .section.teal .icon{background:var(--teal);color:#fff;}
+  .section.amber .section-header{background:var(--amber-light);} .section.amber .section-cost{color:var(--amber);} .section.amber .icon{background:var(--amber);color:#fff;}
+  .section.coral .section-header{background:var(--coral-light);} .section.coral .section-cost{color:var(--coral);} .section.coral .icon{background:var(--coral);color:#fff;}
+  .section.gray .section-header{background:var(--gray-light);} .section.gray .section-cost{color:var(--gray);} .section.gray .icon{background:var(--gray);color:#fff;}
+
+  .chart-wrap{margin-top:1.5rem;}
+  .chart-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+  .chart-bar-label{font-size:0.73rem;color:var(--text-muted);width:130px;flex-shrink:0;text-align:right;}
+  .chart-bar-track{flex:1;background:var(--surface);border-radius:4px;height:18px;overflow:hidden;border:0.5px solid var(--border);}
+  .chart-bar-fill{height:100%;border-radius:4px;transition:width 0.5s;}
+  .chart-bar-value{font-size:0.73rem;font-weight:500;width:68px;flex-shrink:0;}
+  .summary-box{background:var(--surface);border-radius:12px;padding:1.25rem;margin-top:1.5rem;}
+  .summary-box h3{font-size:0.85rem;font-weight:500;margin-bottom:0.75rem;color:var(--text-muted);}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .summary-card{background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;}
+  .sc-label{font-size:0.7rem;color:var(--text-muted);}
+  .sc-value{font-size:1.05rem;font-weight:500;margin-top:2px;}
+
+  /* timeline */
+  .timeline-wrap{max-width:900px;margin:0 auto;padding:2rem;}
+  .timeline-intro{font-size:0.85rem;color:var(--text-muted);margin-bottom:1.5rem;}
+  .decade-block{margin-bottom:2.25rem;}
+  .decade-label{font-size:0.75rem;font-weight:500;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.65rem;display:flex;align-items:center;gap:0.5rem;}
+  .decade-label::after{content:'';flex:1;height:0.5px;background:var(--border);}
+  .decade-age{font-size:0.95rem;font-weight:500;color:var(--text);}
+  .timeline-events{display:flex;flex-direction:column;gap:7px;}
+  .tl-event{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg);}
+  .tl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+  .tl-content{flex:1;}
+  .tl-name{font-size:0.82rem;font-weight:500;}
+  .tl-desc{font-size:0.73rem;color:var(--text-muted);margin-top:1px;}
+  .tl-cost{font-size:0.8rem;font-weight:500;flex-shrink:0;padding-top:2px;}
+  .tl-invisible{font-size:0.7rem;color:var(--text-muted);font-style:italic;}
+  .decade-running-total{display:flex;align-items:center;gap:10px;margin-top:8px;padding:7px 11px;border-radius:8px;background:var(--surface);}
+  .drt-label{font-size:0.73rem;color:var(--text-muted);flex:1;}
+  .drt-this{font-size:0.82rem;font-weight:500;}
+  .drt-cumulative{font-size:0.75rem;color:var(--text-muted);}
+  .area-chart-wrap{margin:1.5rem 0 1rem;}
+  .area-chart-wrap h3{font-size:0.82rem;color:var(--text-muted);font-weight:500;margin-bottom:0.65rem;}
+  #area-svg{width:100%;display:block;}
+  .area-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;}
+  .area-legend-item{display:flex;align-items:center;gap:4px;font-size:0.7rem;color:var(--text-muted);}
+  .area-legend-swatch{width:9px;height:9px;border-radius:2px;}
+  footer{text-align:center;padding:2rem;color:var(--text-muted);font-size:0.75rem;border-top:0.5px solid var(--border);margin-top:2rem;line-height:1.9;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>The Hidden Cost of Being a Woman</h1>
+  <p>A lifetime of invisible expenses — financial, physical, and professional — that rarely appear in any budget.</p>
+</div>
+
+<div class="sticky-total">
+  <div>
+    <div class="label">Estimated lifetime hidden cost</div>
+    <div class="amount" id="grand-total">£0</div>
+  </div>
+  <div class="note">Toggle items that apply to you. Figures are estimates.</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="breakdown">Breakdown</button>
+  <button class="tab-btn" data-tab="timeline">Life timeline</button>
+</div>
+
+<div class="settings">
+  <div class="setting-group">
+    <label for="country">Country</label>
+    <select id="country">
+      <option value="GBP">🇬🇧 United Kingdom</option>
+      <option value="USD">🇺🇸 United States</option>
+      <option value="CAD">🇨🇦 Canada</option>
+      <option value="EUR">🇪🇺 Europe (EUR)</option>
+    </select>
+  </div>
+  <div class="setting-group">
+    <label for="salary">Annual salary (gross)</label>
+    <input type="number" id="salary" value="35000" min="10000" max="300000" step="1000">
+  </div>
+  <div class="setting-group">
+    <label for="work-years">Years in workforce</label>
+    <input type="number" id="work-years" value="40" min="10" max="50" step="1">
+  </div>
+</div>
+
+<!-- BREAKDOWN -->
+<div class="tab-panel active" id="tab-breakdown">
+  <div class="sections">
+
+    <!-- Labour Calculator -->
+    <div class="labour-calc">
+      <h3>Calculating the uncountable: invisible labour</h3>
+      <p>Emotional labour, the mental load, and unpaid "glue work" are real economic costs. Enter your estimates below — we calculate value using three methods used by economists and the ONS.</p>
+      <div class="labour-inputs">
+        <div class="labour-input-group">
+          <label>Hours/week on emotional labour at work</label>
+          <input type="number" id="el-work" value="3" min="0" max="40" step="0.5">
+        </div>
+        <div class="labour-input-group">
+          <label>Hours/week on mental load at home</label>
+          <input type="number" id="el-home" value="5" min="0" max="40" step="0.5">
+        </div>
+        <div class="labour-input-group">
+          <label>Hours/week on unpaid glue work</label>
+          <input type="number" id="el-glue" value="2" min="0" max="20" step="0.5">
+        </div>
+        <div class="labour-input-group">
+          <label>Years carrying this load</label>
+          <input type="number" id="el-years" value="35" min="1" max="50" step="1">
+        </div>
+      </div>
+      <div class="labour-results" id="labour-results"></div>
+      <div class="labour-include">
+        <input type="checkbox" id="labour-include-chk" checked>
+        <label for="labour-include-chk">Include opportunity cost value in total</label>
+      </div>
+    </div>
+
+    <div id="sections-container"></div>
+  </div>
+
+  <div style="max-width:860px;margin:0 auto;padding:0 2rem 2rem;">
+    <div class="chart-wrap" id="chart-wrap"></div>
+    <div class="summary-box">
+      <h3>What this cost could have been instead</h3>
+      <div class="summary-grid" id="summary-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TIMELINE -->
+<div class="tab-panel" id="tab-timeline">
+  <div class="timeline-wrap">
+    <p class="timeline-intro">Costs accumulate across every decade. Toggle items in the Breakdown tab to personalise this timeline.</p>
+    <div class="area-chart-wrap">
+      <h3>Cumulative hidden cost over a lifetime</h3>
+      <svg id="area-svg" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+      <div class="area-legend" id="area-legend"></div>
+    </div>
+    <div id="timeline-container"></div>
+  </div>
+</div>
+
+<footer>
+  Sources: Fawcett Society · ONS Unpaid Work statistics · NICE guidelines · Endometriosis UK · TUC · IFS pension reports · WBG · Statistics Canada · UKHSA UTI data<br>
+  Invisible labour values use ONS replacement cost methodology and opportunity cost.<br>
+  All figures are estimates — real costs vary by individual circumstance. Built to make the invisible visible.
+</footer>
+
+<script>
+const CURRENCIES = {
+  GBP:{symbol:'£',rate:1,minWage:11.44,label:'UK'},
+  USD:{symbol:'$',rate:1.27,minWage:10.00,label:'US'},
+  CAD:{symbol:'C$',rate:1.72,minWage:17.30,label:'Canada'},
+  EUR:{symbol:'€',rate:1.17,minWage:10.50,label:'Europe'}
+};
+let currency='GBP', salary=35000, workYears=40;
+let labourInclude=true;
+let elWork=3, elHome=5, elGlue=2, elYears=35;
+
+const COLORS={pink:'#D4537E',purple:'#534AB7',teal:'#1D9E75',amber:'#BA7517',coral:'#D85A30',gray:'#888780'};
+
+const sections=[
+  {id:'body',label:'Body & health',color:'pink',icon:'♀',items:[
+    {id:'period-products',name:'Menstrual products',desc:'~£13/month from first period (~13) to menopause (~50) — 37 years.',base:5772,enabled:true},
+    {id:'pain-meds',name:'Period pain relief',desc:'OTC medication, heat patches, hot water bottles across a lifetime.',base:1200,enabled:true},
+    {id:'uti',name:'Recurrent UTIs',desc:'Women are 30× more likely than men to get UTIs. GP visits, antibiotics, lost work days. Chronic sufferers: private urology, long-term prophylaxis.',base:4800,enabled:false},
+    {id:'stress-sick',name:'Stress-related sick leave',desc:'Women report higher workplace stress — partly from carrying the mental load while working full time. Lost wages, career impact.',base:8500,enabled:false},
+    {id:'pmdd',name:'PMDD management',desc:'Therapy, supplements, medication. Affects ~5–8% of women.',base:8000,enabled:false},
+    {id:'endo',name:'Endometriosis costs',desc:'Avg 8-year diagnosis delay. Private consults, surgery, lost work. Affects 1 in 10.',base:18000,enabled:false},
+    {id:'migraine',name:'Hormonal migraines',desc:'Medication, lost work days, specialist visits for menstrual-related migraines.',base:4500,enabled:false},
+    {id:'fertility',name:'Contraception (lifetime)',desc:'Pills, coils, injections, implants — not always fully covered.',base:3200,enabled:true},
+    {id:'menopause',name:'Menopause & perimenopause',desc:'HRT, private consultations, supplements. Many women pay privately for adequate treatment.',base:6000,enabled:true},
+  ]},
+  {id:'work',label:'Work & pay',color:'purple',icon:'£',items:[
+    {id:'pay-gap',name:'Lifetime pay gap',desc:'Women earn ~84p for every £1 men earn (UK). Compounds across a career.',dynamic:'payGap',enabled:true},
+    {id:'unpaid-labour',name:'Unpaid office "glue work"',desc:'Note-taking, mentoring, organising, emotional support — work that rarely gets promoted.',base:12000,enabled:true},
+    {id:'emotional-labour',name:'Emotional labour at work',desc:'Softening feedback, de-escalating conflict, managing others\' feelings. Invisible tax on women\'s time and energy.',base:0,enabled:true,invisible:true,labourKey:'work'},
+    {id:'school-glue',name:'"Social glue" conditioning',desc:'Girls are socialised from childhood to smooth conflict and manage group dynamics. A lifelong, unpaid, unrecognised skill.',base:0,enabled:true,invisible:true},
+  ]},
+  {id:'family',label:'Motherhood & family',color:'teal',icon:'◎',items:[
+    {id:'maternity-pay',name:'Statutory maternity pay gap',desc:'Difference between full salary and statutory pay (£184/wk) for 39 weeks, per child.',dynamic:'maternity',enabled:false},
+    {id:'miscarriage',name:'Miscarriage costs',desc:'Private scans, time off, mental health support. ~1 in 4 pregnancies.',base:2500,enabled:false},
+    {id:'childcare',name:'Career interruption (childcare)',desc:'Years out or reduced hours — compounding effect on salary and pension.',dynamic:'childcareGap',enabled:false},
+    {id:'fertility-tx',name:'Fertility treatment',desc:'IVF not always NHS/publicly covered. Average private cycle ~£5,000.',base:10000,enabled:false},
+  ]},
+  {id:'pension',label:'Pension & retirement',color:'amber',icon:'◇',items:[
+    {id:'pension-gap',name:'Pension gap (career breaks)',desc:'Women retire with ~35–40% less pension than men, driven by every career break and part-time year.',dynamic:'pensionGap',enabled:true},
+    {id:'caring-pension',name:'Pension loss from caring',desc:'Leaving work to care for elderly parents or family. Women provide 60% of unpaid care.',base:22000,enabled:false},
+  ]},
+  {id:'care',label:'Unpaid care & labour',color:'coral',icon:'◉',items:[
+    {id:'elder-care',name:'Elderly parent care',desc:'Women provide ~60% of informal elder care — often reducing work hours or stopping entirely.',base:15000,enabled:false},
+    {id:'domestic',name:'Domestic labour gap',desc:'Women do on average 16 more hours/week of unpaid housework and childcare than male partners.',base:0,enabled:true,invisible:true,labourKey:'home'},
+    {id:'mental-load',name:'The mental load',desc:'Planning, remembering, managing family admin — invisible cognitive labour that never stops.',base:0,enabled:true,invisible:true,labourKey:'home'},
+  ]},
+  {id:'safety',label:'Safety & appearance',color:'gray',icon:'◈',items:[
+    {id:'pink-tax',name:'Pink tax (gendered pricing)',desc:'Women\'s products cost ~7% more than equivalent men\'s versions.',base:3500,enabled:true},
+    {id:'safety-cost',name:'Personal safety costs',desc:'Late-night taxis, safety apps, well-lit routes, self-defence classes.',base:4000,enabled:true},
+    {id:'appearance',name:'Professional appearance premium',desc:'Stronger expectation to wear makeup, styled hair, professional dress at work.',base:9000,enabled:true},
+  ]},
+];
+
+const enabled={};
+sections.forEach(s=>s.items.forEach(i=>{enabled[i.id]=i.enabled;}));
+
+function fmt(n){
+  const {symbol,rate}=CURRENCIES[currency];
+  return symbol+Math.round(n*rate).toLocaleString();
+}
+
+function dynamic(key){
+  switch(key){
+    case 'payGap': return salary*0.16*workYears*0.6;
+    case 'maternity': return Math.max(0,(salary/52)-184)*39;
+    case 'childcareGap': return salary*0.25*5;
+    case 'pensionGap': return salary*0.08*workYears*0.38;
+    default: return 0;
+  }
+}
+
+function labourValue(){
+  const totalHrs=(elWork+elHome+elGlue)*52*elYears;
+  const {rate,minWage}=CURRENCIES[currency];
+  const hrSalary=(salary/1820);
+  return {
+    replacement: totalHrs*minWage*rate,
+    opportunity: totalHrs*hrSalary*rate,
+    ons: totalHrs*(minWage*1.35)*rate
+  };
+}
+
+function itemValue(item){
+  if(!enabled[item.id]||item.invisible) return 0;
+  return item.dynamic ? dynamic(item.dynamic) : (item.base||0);
+}
+
+function sectionTotal(s){return s.items.reduce((sum,i)=>sum+itemValue(i),0);}
+
+function grandTotal(){
+  const sec=sections.reduce((sum,s)=>sum+sectionTotal(s),0);
+  if(labourInclude){
+    const lv=labourValue();
+    return sec+lv.opportunity;
+  }
+  return sec;
+}
+
+// Labour calculator UI
+function buildLabourCalc(){
+  const lv=labourValue();
+  const totalHrs=(elWork+elHome+elGlue)*52*elYears;
+  document.getElementById('labour-results').innerHTML=`
+    <div class="labour-card">
+      <div class="lc-label">Hours of invisible labour</div>
+      <div class="lc-value">${Math.round(totalHrs).toLocaleString()} hrs</div>
+      <div class="lc-note">Over ${elYears} years</div>
+    </div>
+    <div class="labour-card">
+      <div class="lc-label">Replacement cost (min wage)</div>
+      <div class="lc-value">${fmt(lv.replacement/CURRENCIES[currency].rate)}</div>
+      <div class="lc-note">What you'd pay someone else</div>
+    </div>
+    <div class="labour-card">
+      <div class="lc-label">ONS method (1.35× min wage)</div>
+      <div class="lc-value">${fmt(lv.ons/CURRENCIES[currency].rate)}</div>
+      <div class="lc-note">Used in official unpaid work stats</div>
+    </div>
+    <div class="labour-card" style="border-color:var(--purple);border-width:1.5px;">
+      <div class="lc-label">Opportunity cost (your wage rate)</div>
+      <div class="lc-value" style="color:var(--purple)">${fmt(lv.opportunity/CURRENCIES[currency].rate)}</div>
+      <div class="lc-note">What you could have earned instead</div>
+    </div>`;
+}
+
+function buildSections(){
+  const container=document.getElementById('sections-container');
+  container.innerHTML='';
+  sections.forEach(s=>{
+    const sec=document.createElement('div');
+    sec.className=`section ${s.color}`;
+    const header=document.createElement('div');
+    header.className='section-header';
+    header.innerHTML=`<div class="icon">${s.icon}</div><h2>${s.label}</h2><div class="section-cost" id="cost-${s.id}">${fmt(sectionTotal(s))}</div><div class="chevron">▼</div>`;
+    header.addEventListener('click',()=>{header.classList.toggle('open');body.classList.toggle('open');});
+    const body=document.createElement('div');
+    body.className='section-body';
+    s.items.forEach(item=>{
+      const row=document.createElement('div');
+      row.className='cost-row';
+      row.innerHTML=`
+        <div style="flex:1">
+          <div class="row-name">${item.name}</div>
+          <div class="row-desc">${item.desc}</div>
+          ${item.invisible?`<p class="invisible-note">Calculated in the labour estimator above — real but carried in time & energy, not just money.</p>`:''}
+        </div>
+        <div class="row-right">
+          <div class="row-amount" id="val-${item.id}">${item.invisible?'↑ see above':fmt(itemValue(item))}</div>
+          <div class="row-toggle">
+            <input type="checkbox" id="chk-${item.id}" ${enabled[item.id]?'checked':''}>
+            <label class="toggle-label" for="chk-${item.id}">applies to me</label>
+          </div>
+        </div>`;
+      row.querySelector(`#chk-${item.id}`).addEventListener('change',e=>{enabled[item.id]=e.target.checked;update();});
+      body.appendChild(row);
+    });
+    sec.appendChild(header);sec.appendChild(body);
+    container.appendChild(sec);
+  });
+}
+
+function buildChart(){
+  const wrap=document.getElementById('chart-wrap');
+  const cats=[
+    ...sections.map(s=>({label:s.label,color:COLORS[s.color],val:sectionTotal(s)})),
+  ];
+  if(labourInclude){
+    const lv=labourValue();
+    cats.push({label:'Invisible labour (opportunity cost)',color:COLORS.purple,val:lv.opportunity/CURRENCIES[currency].rate});
+  }
+  const max=Math.max(...cats.map(t=>t.val),1);
+  wrap.innerHTML=`<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.65rem;font-weight:500;">Cost by category</div>`+
+    cats.map(t=>`<div class="chart-bar-row">
+      <div class="chart-bar-label">${t.label}</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(t.val/max*100)}%;background:${t.color};"></div></div>
+      <div class="chart-bar-value">${fmt(t.val)}</div>
+    </div>`).join('');
+}
+
+function buildSummary(){
+  const total=grandTotal();
+  const {rate}=CURRENCIES[currency];
+  const grid=document.getElementById('summary-grid');
+  const items=[
+    {label:'Years of your salary',value:total>0?(total/(salary*rate)).toFixed(1)+' yrs':'—'},
+    {label:'Monthly equivalent',value:fmt(total/(workYears*12))},
+    {label:'Could add to pension p/yr',value:fmt(total/workYears)},
+    {label:'Home deposit months',value:total>0?Math.ceil(40000*rate/(total/(workYears*12)))+' months':'—'},
+  ];
+  grid.innerHTML=items.map(i=>`<div class="summary-card"><div class="sc-label">${i.label}</div><div class="sc-value">${i.value}</div></div>`).join('');
+}
+
+// ── TIMELINE ──
+const TIMELINE_DECADES=[
+  {decade:'teens',label:'Teens',ageRange:'13–19',events:[
+    {sectionColor:'pink',name:'Menstrual products begin',itemId:'period-products',desc:'First period — ~37 years of monthly costs begins now.',perDecade:5772*(7/37)},
+    {sectionColor:'pink',name:'Period pain & pain relief',itemId:'pain-meds',desc:'OTC medication, missed school days start here.',perDecade:1200*(7/37)},
+    {sectionColor:'gray',name:'"Social glue" conditioning at school',itemId:'school-glue',invisible:true,desc:'Girls become the emotional managers of classrooms and friend groups.'},
+    {sectionColor:'gray',name:'Pink tax begins',itemId:'pink-tax',desc:'Girls\' products already cost more than boys\'.',perDecade:3500*(7/45)},
+  ]},
+  {decade:'twenties',label:'Twenties',ageRange:'20–29',events:[
+    {sectionColor:'purple',name:'Pay gap from day one',itemId:'pay-gap',desc:'Women start lower and it compounds from the first job.',dynamic:'payGap',decadeFrac:0.25},
+    {sectionColor:'pink',name:'Contraception costs',itemId:'fertility',desc:'Ongoing cost, not always fully covered.',perDecade:3200*(10/30)},
+    {sectionColor:'pink',name:'UTIs begin recurring',itemId:'uti',desc:'Women are 30× more likely than men. GP visits, antibiotics, lost work days.',perDecade:4800*(10/37)},
+    {sectionColor:'purple',name:'Unpaid glue work starts',itemId:'unpaid-labour',desc:'Taking notes, mentoring, organising — before anyone knows your name.',perDecade:12000*(10/40)},
+    {sectionColor:'gray',name:'Safety costs (nights out)',itemId:'safety-cost',desc:'Late taxis, avoiding routes — a tax on socialising.',perDecade:4000*(10/40)},
+    {sectionColor:'gray',name:'Appearance premium',itemId:'appearance',desc:'Professional expectations kick in immediately.',perDecade:9000*(10/40)},
+    {sectionColor:'teal',name:'Miscarriage (if applicable)',itemId:'miscarriage',desc:'1 in 4 pregnancies. Scans, time off, mental health costs.',perDecade:2500,optional:true},
+    {sectionColor:'pink',name:'PMDD / endometriosis emerges',itemId:'pmdd',desc:'Often dismissed for years before diagnosis.',perDecade:4000,optional:true},
+    {sectionColor:'pink',name:'Stress-related sick leave',itemId:'stress-sick',desc:'Mental load while building a career takes a physical toll.',perDecade:8500*(10/40)},
+  ]},
+  {decade:'thirties',label:'Thirties',ageRange:'30–39',events:[
+    {sectionColor:'teal',name:'Maternity pay gap',itemId:'maternity-pay',desc:'Statutory pay vs full salary for 39 weeks per child.',dynamic:'maternity',decadeFrac:1,optional:true},
+    {sectionColor:'teal',name:'Career interruption',itemId:'childcare',desc:'Salary progression stalls. Part-time years = part-time pension.',dynamic:'childcareGap',decadeFrac:1,optional:true},
+    {sectionColor:'pink',name:'Endometriosis diagnosis (finally)',itemId:'endo',desc:'8-year average wait. Surgery, ongoing treatment, lost working time.',perDecade:9000,optional:true},
+    {sectionColor:'purple',name:'Motherhood penalty',itemId:'pay-gap',desc:'Men\'s pay rises after children. Women\'s falls.',dynamic:'payGap',decadeFrac:0.25},
+    {sectionColor:'amber',name:'Pension contributions fall',itemId:'pension-gap',desc:'Every career break widens the gap that compounds for decades.',dynamic:'pensionGap',decadeFrac:0.25},
+    {sectionColor:'coral',name:'Mental load at its peak',itemId:'mental-load',invisible:true,desc:'Managing careers, children, households — all simultaneously.'},
+    {sectionColor:'pink',name:'Stress & health costs rise',itemId:'stress-sick',desc:'Chronic stress from overload begins showing up physically.',perDecade:8500*(10/40)},
+  ]},
+  {decade:'forties',label:'Forties',ageRange:'40–49',events:[
+    {sectionColor:'pink',name:'Perimenopause begins',itemId:'menopause',desc:'Symptoms often dismissed. Private referrals, HRT, supplements.',perDecade:6000*0.5},
+    {sectionColor:'pink',name:'Menstrual products continue',itemId:'period-products',desc:'Until menopause (~50). Products, pain management ongoing.',perDecade:5772*(7/37)},
+    {sectionColor:'coral',name:'Elder care duties increase',itemId:'elder-care',desc:'Women provide the majority of care for ageing parents — often reducing work hours.',perDecade:15000*(5/20),optional:true},
+    {sectionColor:'purple',name:'Glue work, unrewarded',itemId:'unpaid-labour',desc:'Still running the team socials. Still the one everyone turns to.',perDecade:12000*(10/40)},
+    {sectionColor:'amber',name:'Pension gap compounds',itemId:'caring-pension',desc:'Every year of caring = another year of reduced contributions.',perDecade:22000*(10/20),optional:true},
+  ]},
+  {decade:'fifties',label:'Fifties',ageRange:'50–59',events:[
+    {sectionColor:'pink',name:'Menopause costs',itemId:'menopause',desc:'Many women pay privately for adequate care. Lost productivity during transition.',perDecade:6000*0.5},
+    {sectionColor:'pink',name:'Menstrual products end (~50)',itemId:'period-products',desc:'~37 years, roughly £5,772 total. A lifetime of monthly expense closes.',perDecade:0},
+    {sectionColor:'coral',name:'Elder care intensifies',itemId:'elder-care',desc:'Parents need more. Women often stop work or go part-time entirely.',perDecade:15000*(10/20),optional:true},
+    {sectionColor:'amber',name:'Pension gap now visible',itemId:'pension-gap',desc:'The compounding effect of every break, every part-time year.',dynamic:'pensionGap',decadeFrac:0.25},
+    {sectionColor:'pink',name:'UTIs / chronic conditions',itemId:'uti',desc:'Post-menopause UTI risk increases again. Ongoing management costs.',perDecade:4800*(10/37)},
+  ]},
+  {decade:'sixties',label:'Sixties & beyond',ageRange:'60+',events:[
+    {sectionColor:'amber',name:'Smaller pension — for life',itemId:'pension-gap',desc:'Women retire with ~35–40% less than men. Every pound less compounds over retirement.',dynamic:'pensionGap',decadeFrac:0.25},
+    {sectionColor:'coral',name:'Unpaid care legacy',itemId:'caring-pension',desc:'Years of caring left gaps that can never be recovered.',perDecade:22000*(10/20),optional:true},
+    {sectionColor:'purple',name:'Career earnings: the final tally',itemId:'pay-gap',desc:'The cumulative pay gap is now set in stone.',perDecade:0},
+  ]},
+];
+
+function getEventCost(ev){
+  const item=sections.flatMap(s=>s.items).find(i=>i.id===ev.itemId);
+  if(!item||!enabled[item.id]||item.invisible||ev.invisible) return null;
+  if(ev.dynamic) return dynamic(ev.dynamic)*(ev.decadeFrac||1);
+  if(ev.perDecade!==undefined) return ev.perDecade;
+  return 0;
+}
+
+function buildTimeline(){
+  const container=document.getElementById('timeline-container');
+  container.innerHTML='';
+  let cumulative=0;
+  TIMELINE_DECADES.forEach(decade=>{
+    const block=document.createElement('div');
+    block.className='decade-block';
+    const dlabel=document.createElement('div');
+    dlabel.className='decade-label';
+    dlabel.innerHTML=`<span class="decade-age">${decade.ageRange}</span> — ${decade.label}`;
+    block.appendChild(dlabel);
+    const eventsWrap=document.createElement('div');
+    eventsWrap.className='timeline-events';
+    let decadeCost=0;
+    decade.events.forEach(ev=>{
+      const item=sections.flatMap(s=>s.items).find(i=>i.id===ev.itemId);
+      if(!item||!enabled[item.id]) return;
+      const cost=getEventCost(ev);
+      if(cost!==null&&cost>0) decadeCost+=cost;
+      const color=COLORS[ev.sectionColor];
+      const div=document.createElement('div');
+      div.className='tl-event';
+      let costLabel=ev.invisible?`<span class="tl-invisible">↑ labour calc</span>`
+        :(cost!==null&&cost>0?`<span class="tl-cost" style="color:${color}">${fmt(cost)}</span>`:'');
+      div.innerHTML=`
+        <div class="tl-dot" style="background:${color};"></div>
+        <div class="tl-content">
+          <div class="tl-name">${ev.name}${ev.optional?' <span style="font-size:0.68rem;color:var(--text-muted);font-weight:400;">(if applicable)</span>':''}</div>
+          <div class="tl-desc">${ev.desc}</div>
+        </div>${costLabel}`;
+      eventsWrap.appendChild(div);
+    });
+    block.appendChild(eventsWrap);
+    // add labour cost if labourInclude
+    if(labourInclude){
+      const lv=labourValue();
+      const perDecade=(lv.opportunity/CURRENCIES[currency].rate)/6;
+      decadeCost+=perDecade;
+    }
+    cumulative+=decadeCost;
+    const totalRow=document.createElement('div');
+    totalRow.className='decade-running-total';
+    totalRow.innerHTML=`<span class="drt-label">This period</span><span class="drt-this" style="color:var(--pink)">${fmt(decadeCost)}</span><span class="drt-cumulative">Running total: ${fmt(cumulative)}</span>`;
+    block.appendChild(totalRow);
+    container.appendChild(block);
+  });
+}
+
+function buildAreaChart(){
+  const svg=document.getElementById('area-svg');
+  svg.innerHTML='';
+  const W=800,H=200,PAD={top:10,right:10,bottom:30,left:62};
+  const innerW=W-PAD.left-PAD.right,innerH=H-PAD.top-PAD.bottom;
+  const categoryColors=[
+    {key:'body',color:'#D4537E',label:'Body & health'},
+    {key:'work',color:'#534AB7',label:'Work & pay'},
+    {key:'family',color:'#1D9E75',label:'Family'},
+    {key:'pension',color:'#BA7517',label:'Pension'},
+    {key:'care',color:'#D85A30',label:'Care'},
+    {key:'safety',color:'#888780',label:'Safety'},
+    {key:'labour',color:'#AFA9EC',label:'Invisible labour'},
+  ];
+  const decadeKeys=TIMELINE_DECADES.map(d=>d.label);
+  const n=decadeKeys.length;
+  function decadeSectionCost(decade,sectionId){
+    const sec=sections.find(s=>s.id===sectionId);
+    if(!sec) return 0;
+    return decade.events.reduce((sum,ev)=>{
+      const item=sec.items.find(i=>i.id===ev.itemId);
+      if(!item||!enabled[item.id]||ev.invisible||item.invisible) return sum;
+      const c=getEventCost(ev);
+      return sum+(c&&c>0?c:0);
+    },0);
+  }
+  const sectionIds=['body','work','family','pension','care','safety'];
+  const data=TIMELINE_DECADES.map(d=>{
+    const vals={};
+    sectionIds.forEach(sid=>{vals[sid]=decadeSectionCost(d,sid);});
+    if(labourInclude){
+      const lv=labourValue();
+      vals['labour']=(lv.opportunity/CURRENCIES[currency].rate)/6;
+    } else vals['labour']=0;
+    return vals;
+  });
+  const allKeys=[...sectionIds,'labour'];
+  const stackTotals=data.map(d=>allKeys.reduce((s,k)=>s+d[k],0));
+  const maxVal=Math.max(...stackTotals,1);
+  const xStep=innerW/(n-1);
+  const yScale=v=>innerH-(v/maxVal)*innerH;
+  const stacks=allKeys.map((key,ki)=>data.map((d,di)=>{
+    const lower=allKeys.slice(0,ki).reduce((s,k)=>s+d[k],0);
+    return{x:PAD.left+di*xStep,y1:PAD.top+yScale(lower),y2:PAD.top+yScale(lower+d[key])};
+  }));
+  [0,0.5,1].forEach(frac=>{
+    const y=PAD.top+innerH*(1-frac);
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',PAD.left);line.setAttribute('x2',W-PAD.right);
+    line.setAttribute('y1',y);line.setAttribute('y2',y);
+    line.setAttribute('stroke','rgba(128,128,128,0.18)');line.setAttribute('stroke-width','0.5');
+    svg.appendChild(line);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',PAD.left-4);t.setAttribute('y',y+3);
+    t.setAttribute('text-anchor','end');t.setAttribute('font-size','10');t.setAttribute('fill','#888');
+    const {symbol,rate}=CURRENCIES[currency];
+    t.textContent=symbol+Math.round(maxVal*frac*rate/1000)+'k';
+    svg.appendChild(t);
+  });
+  allKeys.forEach((key,ki)=>{
+    const pts=stacks[ki];
+    const cat=categoryColors.find(c=>c.key===key);
+    const topPath=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y2.toFixed(1)}`).join(' ');
+    const botPath=[...pts].reverse().map(p=>`L${p.x.toFixed(1)},${p.y1.toFixed(1)}`).join(' ');
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',topPath+' '+botPath+' Z');
+    path.setAttribute('fill',cat.color);path.setAttribute('opacity','0.78');
+    svg.appendChild(path);
+  });
+  decadeKeys.forEach((label,i)=>{
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',PAD.left+i*xStep);t.setAttribute('y',H-5);
+    t.setAttribute('text-anchor','middle');t.setAttribute('font-size','11');t.setAttribute('fill','#888');
+    t.textContent=label;svg.appendChild(t);
+  });
+  document.getElementById('area-legend').innerHTML=categoryColors.map(c=>
+    `<div class="area-legend-item"><div class="area-legend-swatch" style="background:${c.color};"></div>${c.label}</div>`).join('');
+}
+
+function update(){
+  document.getElementById('grand-total').textContent=fmt(grandTotal());
+  buildLabourCalc();
+  sections.forEach(s=>{
+    const el=document.getElementById(`cost-${s.id}`);
+    if(el) el.textContent=fmt(sectionTotal(s));
+    s.items.forEach(item=>{
+      const el=document.getElementById(`val-${item.id}`);
+      if(el&&!item.invisible) el.textContent=fmt(itemValue(item));
+    });
+  });
+  buildChart();buildSummary();buildTimeline();buildAreaChart();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+  });
+});
+
+document.getElementById('country').addEventListener('change',e=>{currency=e.target.value;update();});
+document.getElementById('salary').addEventListener('input',e=>{salary=+e.target.value||35000;update();});
+document.getElementById('work-years').addEventListener('input',e=>{workYears=+e.target.value||40;update();});
+document.getElementById('labour-include-chk').addEventListener('change',e=>{labourInclude=e.target.checked;update();});
+['el-work','el-home','el-glue','el-years'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',e=>{
+    if(id==='el-work') elWork=+e.target.value||0;
+    if(id==='el-home') elHome=+e.target.value||0;
+    if(id==='el-glue') elGlue=+e.target.value||0;
+    if(id==='el-years') elYears=+e.target.value||35;
+    update();
+  });
+});
+
+buildSections();
+update();
+</script>
+</body>
+</html>
